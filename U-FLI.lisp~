@@ -1,0 +1,17 @@
+;;******************** U-FLI.lisp *************************
+
+
+
+
+#|The example uses the FLI to find the position of the cursor using the Windows
+function GetCursorPos, which has the following C prototype:
+BOOL GetCursorPos( LPPOINT )
+The LPPOINT argument is a pointer to the POINT structure, which has the following
+C definition:
+1.2 Using the FLI to get the cursor position
+5
+typedef struct tagPOINT { 
+   LONG x;
+   LONG y;
+   } POINT;
+|#

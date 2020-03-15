@@ -1,0 +1,136 @@
+;;************************ U-lw-editor.lisp *************************
+;;
+;;
+
+;;LIST-MULTI-BUFFER-OBJECTS
+;;
+;;ddd
+(defun list-buffer-objects (file-prename object-type-list &key (pathroot "C:\\TOM\\LISP PROJECTS TS\\")(dir "shaq")(ext ".lisp") )
+  "In U-lw-editor.lisp, creates a window and prints a list of each object-type in the object-type-list."
+  (let
+      ((buffer-text)
+       )
+   
+   (list-buffer-objects file-prename object-type :pathroot pathroot :dir dir :ext ext)
+
+;;LIST-BUFFER-OBJECTS
+;;
+;;ddd
+(defun list-buffer-objects1 (file-prename object-type &key (pathroot "C:\\TOM\\LISP PROJECTS TS\\")(dir "shaq")(ext ".lisp") )
+  "In U-lw-editor.lisp, creates a window and prints a list of object-type items in it"
+  (let*
+      ((pathname (format nil "~A~A\\~A~A" pathroot dir file-prename ext))
+       (buffer-name (format nil "~A defclass buffer" pathroot))
+       (object-list-buffer-inst (make-instance 'buffer-list-frame))
+        (eof)
+        (object-string  (format nil "~A" object-type))
+        (object-list-string (format nil "In pathname: ~A~%  LIST OF OBJECTS=> ~A~%" pathname  object-string))
+        )
+    (with-open-file (s-input pathname :direction :input) 
+      (loop
+       for n from 0 to 3000
+       with line
+       with token
+       with rest-string
+       do
+       (multiple-value-setq (line eof)
+           (read-line s-input))
+         (cond
+          (eof
+           (return))
+          (t
+           (multiple-value-setq (token rest-string)
+               (match-first-token object-string line  :delimiter-list '( "\(" " ")))
+           (cond
+            (token
+             (setf object-list-string (format nil "~A~%~A" object-list-string line))
+             )
+            (t nil))
+           ))
+         ;;end loop
+            )
+      ;;return
+      object-list-string
+      )
+       ;;display the buffer
+       (capi:display object-list-buffer-inst)
+
+#|      (with-slots (answer-button-panel)  q-frame-inst
+        ;;MAKE THE  BUTTON PANEL
+      (setf answer-button-panel (make-radio-button-panel ans-instruction-text answer-array-list))
+      ;;Put the BUTTON IN THE ALREADY CREATED FRAME
+        (capi:apply-in-pane-process quest-rich-text-pane
+                   #'(setf capi:rich-text-pane-text) question-text-formated quest-rich-text-pane |#
+       ;;print to the buffer
+       (with-slots (text-pane-1) object-list-buffer-inst
+           (capi:apply-in-pane-process  text-pane-1
+                #'(setf capi:rich-text-pane-text)   object-list-string text-pane-1)               
+               
+           ;;end let,with-open-file list-my-defclasses
+         ;;  object-list-string
+           ))))
+;;TEST
+;; (list-buffer-objects "SHAQ-new-scales" "my-defclass")
+
+
+
+;;LIST-SCALECLASSES
+;;
+;;ddd
+(defun list-scaleclasses ()
+  "In U-LW-editor"
+   (list-buffer-objects "SHAQ-new-scales" "my-defclass")
+       )
+;; (list-scaleclasses)
+
+
+
+
+
+
+
+
+           
+;;BUFFER-LIST-FRAME
+;;
+;;ddd
+(capi:define-interface buffer-list-frame ()
+  ()
+  (:panes
+#|   (output-pane-1
+    capi:output-pane)
+   (collector-pane-1
+    capi:collector-pane)|#
+   (text-pane-1
+    capi:rich-text-pane
+   :visible-min-height 700
+   :visible-min-width 350
+    )
+   (radio-button-panel-1
+    capi:radio-button-panel
+    :items '("Radio-Button-Panel-1" "Button 2" "Button 3")
+    :max-width t
+    :max-height t))
+  (:layouts
+   (column-layout-1
+    capi:column-layout
+    '(text-pane-1 ;;output-pane-1 collector-pane-1  
+                  radio-button-panel-1)))
+  (:menu-bar menu-1)
+  (:menus
+   (menu-2
+    "Menu-2"
+    ())
+   (menu-1
+    "Menu-1"
+    (menu-2
+     "Item-1"
+     "Item-2"
+     "Item-3")))
+  (:default-initargs
+       :x 10
+    :y 60
+   :best-height nil
+   :best-width nil
+   :layout 'column-layout-1
+   :title "Buffer List Frame"))

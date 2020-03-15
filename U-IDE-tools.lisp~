@@ -1,0 +1,22 @@
+;;*************************** U-IDE-tools.lisp *******************************
+
+
+(let ((*handle-warn-on-redefinition* nil))
+
+; non-toplevel
+(defmethod initialize-instance :around ((i
+LISPWORKS-TOOLS:search-files) &rest initargs &key &allow-other-keys)
+  "Sets hard-coded values for root directory and patterns in search files tools initialize-instance. Also,
+LISPWORKS-TOOLS::*last-search-files-interface* might be useful"
+  (call-next-method)
+  (setf
+   (capi:text-input-pane-text
+    (slot-value i 'LISPWORKS-TOOLS::root-directory-pane))
+   "c:/lisp")
+  (setf
+   (capi:text-input-pane-text
+    (slot-value i 'lispworks-tools::patterns-pane))
+   "sw/*.l*sp;sw/fb2/*.l*sp;sw/fb2/sp/*.l*sp;sw/fb2/admin/*.l*sp;sw/fb2/app/*.l*sp")
+  )
+
+);let

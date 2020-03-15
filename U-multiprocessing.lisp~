@@ -1,0 +1,17 @@
+;; ********************** U-multiprocessing.lisp **************************
+
+
+(defun send-with-result (process function)
+  "Could be a very useful function? -- from capi manual. RETURNING A VALUE from another process Rather than using GLOBAL VARIABLES to pass values between processes, you can use CLOSURES instead. example:"
+  (let ((remote-result :none))
+    ;;flet defines to local functions (resultp () (listp remote-result)) and
+    ;;   (run-it () (setq remote-result (multiple-value-list (funcall function))))
+    (flet ((resultp ()
+             (listp remote-result))
+           (run-it ()
+             (setq remote-result
+                   (multiple-value-list (funcall function)))))
+      ;;then the following two processes USE these 2 functions below to send and receive
+      (MP:PROCESS-SEND process (list #'run-it))
+      (MP:PROCESS-WAIT "Waiting for result" #'resultp)
+      (values-list remote-result))))

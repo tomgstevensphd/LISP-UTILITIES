@@ -1,0 +1,38 @@
+;;************************** U-capi-graphics.lisp **************************
+;;
+;;
+
+
+;;MY-DRAW-ELLIPSE
+;;2018-02
+;;ddd
+(defun my-draw-ellipse (instance output-pane x y width height &key filled foreground)
+  "In  U-capi-graphics.lisp. RETURNS ellipse. Includes apply-in-pane-process."
+  (let
+      ((x)
+       )
+    (with-slots (output-pane) instance
+      (capi:apply-in-pane-process output-pane
+                                  'gp:draw-ellipse output-pane x y width height :filled filled
+                                  :foreground foreground)
+      ;;end with-slots,let, my-draw-ellipse
+      )))
+;;TEST
+;; (my-draw-ellipse inst output-pane  20 20 80 50)
+
+
+          ;;EXTRA CIRCLE & RECTANGLE
+#|          (capi:apply-in-pane-process output-pane
+                                      'gp:draw-circle output-pane 100 100 50)
+
+          (capi:apply-in-pane-process output-pane
+                                      'gp:draw-rectangle output-pane 90 20 200 50 :filled t 
+                                      :foreground :blue
+                                      :compositing-mode :copy)|#
+          #|  (gp:draw-image pixmap (capi:capi-object-property pane 'the-image)
+                 10 5 :compositing-mode mode)
+  (gp:copy-area pane pixmap x y 200 50 0 0)|#
+
+
+
+

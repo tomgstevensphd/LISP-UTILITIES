@@ -1,0 +1,191 @@
+;;********************* U-trees-art-dims *******************************
+;;see U-trees for more general tree viewer
+
+
+;;== ARTSYM TREES & OTHER  DIMLIST TREES-----------------------------
+#|Copy, modify make nodes list.
+For each node not an int or value,
+Instead, keys in any order.Can be no keys. Note, puttng happy CSYM is redundant, since CS-HS-1 evals to list w CSYM. Also value redundant.
+For viewing tree, the tree viewer could eval ARTSYM and fill in CSYM and value (also keeps non redundant DB).
+Could write a function to fill in csyms and values w csyms from eval artsyms. 
+(NodeID :v Value :s sublist :c csym) 
+Eg.  (CS :s (HS :s (1 :c happy :v .917 :s (2 :c integrity))(2 :c honest)))
+MAKES=> 
+((CS) CS :sl ((CS HS) CS-HS :sl ((CS HS 1) CS-HS-1 :s happy :v .917 :sl ((CS HS 1 2)CS-HS-1-2 :s integrity)) ((CS HS 2) CS-HS-2 :s honest)))|#
+
+
+
+
+;;MAKE-TREE-FROM-DIMLISTS
+;;2019
+;;ddd
+(defun make-tree-from-dimlists  (tree &key   (cur-dim-n 0) 
+                                   group-by-val-p  order-by-rank-p 
+                                   (root-separator ".")
+                                   last-list=value-p (csymkey :C) (valkey :V)(sublistkey :S)
+                                   add-other-keys (default-key-value NIL)
+                                   (tree-leveln 0) tree-leveln-list
+                                     parent-dimlist parent-dimsymstr
+                                   frame-init-args)
+#|;; group-by-val-p  order-by-rank-p (root-separator ".")
+                                    last-list=value-p (valkey :V=)(sublistkey :SL)
+                                    parent-rootn parent-rootnlist  (root-leveln 0)
+                                    root-leveln-list frame-init-args)|#
+  "In U-trees, Makes a complex tree from a simplier input formula. Use in CS & ART.
+   INPUT: All level-nodelist items (branch) must be a dim, key from keyslist, or following key-value.  Any can be list or not. (Each branch = level-nodelist can have leaves= nodelists within that level) Input eg= (cs :s (hs :s (1 :s (1 2)  2 :s (1  2  3)   3))  (ms :s (ms1 :s (1 2)))).  
+  RETURNS (values return-tree. Eg. (((CS)\"CS\" :S (((CS HS) \"CS.HS\":S (((CS HS 1) \"CS.HS.1\":S (((CS HS 1 1) \"CS.HS.1.1\") ((CS HS 1 2) \"CS.HS.1.2\"))) ETC.
+  USE IN CS/ART: artloc=dimlist (incl prefix); CSYM can either be found from eval artsym or csym can be stored as a value to csymkey.  Tree can be ART-CS DATABASE partially or completely filled.  If start empty, can add artsym/csym to prexisting dimlists. Or could add whole subtrees. Could either check boundp for dimsymstr or value for csymkey."
+  #|All level-nodelist items (branch) must be dim ,key from keyslist, or Val.  Any can be list or not. (Each branch = level-nodelist can have leaves= nodelists).
+Make new nodelist of dimlist, dimsynstr on item if it passes thru cond keys/keyvalues.
+(when NULL NODELIST) and find new NONKEYORVALUE ITEM or on ITEM
+when  last-level-item-p.
+Append nodelist to LEVEL-MODELIST after last level item( in cur items loop) or
+find new nonkeyorvalue item.
+Append return-tree after loop end when nonnil level-nodelist.
+Make new nodelist on lastitem when find key or levelist end.
+|#
+  (let*
+      ((len-tree (list-length tree))
+       (return-tree) 
+       (nodelist)
+       (level-nodelists)
+       (totaln 0)
+       (all-keys (append (list csymkey valkey sublistkey) add-other-keys))
+       (previous-item=key-p)
+       (next-sublist-p)
+       (previous-item)
+       (last-level-item-p)
+       (root-level-dimlist parent-dimlist)
+       (root-level-dimsymstr parent-dimsymstr)
+       ;;added from old
+       (flat-dims-list)
+       (tree-leveln-list)
+       (bottom-dimlist)
+       )
+    (incf tree-leveln)
+    ;;WHEN TREE IS NON-NIL LIST
+    (when (and tree (listp tree))
+      ;;LOOP THRU ITEMS AT THIS LEVEL
+      (LOOP
+       for item in tree
+       for item-n from 1 to len-tree
+       do
+       (let*
+           ((dim)
+            (dimlist)
+            (dimsymstr)  
+            (last-level-item-p (= item-n len-tree))          
+            )
+         (afout 'out (format nil "NEW LOOP ITEM= ~A~% nodelist= ~A level-nodelists= ~A return-tree= ~A" item nodelist level-nodelists return-tree))
+         (cond   
+          (next-sublist-p
+           (setf next-sublist-p NIL
+                 previous-item=key-p NIL)       
+
+           ;;RECURSE 
+           (multiple-value-bind (subtree  flat-dims-list1 tree-leveln-list1
+                                          totaln1 bottom-dimlist1)
+               ;;tree-leveln-list1 totaln) ;; bottom-dimlist)
+               (make-tree-nodes-list item  ;;:n (- n 1) 
+                                     :parent-dim dim
+                                     :parent-dimlist parent-dimlist
+                                     :parent-dimsymstr parent-dimsymstr
+                                     :root-separator root-separator
+                                     :tree-leveln  tree-leveln
+                                     :last-list=value-p  last-list=value-p
+                                     ;; :tree-num-list tree-num-list
+                                     )
+             ;;add current level info OLD
+#|             (setf subtree-parent-node (list rootnlist rootn sublistkey subtree-nodes)
+                   tree-nodes (append tree-nodes  (list subtree-parent-node))
+                   rootn-list (append rootn-list (list rootn-list1))
+                   flat-rootn-list (append flat-rootn-list flat-rootn-list1)
+                   ;;flat-rootnlist-list (append flat-rootnlist-list flat-rootnlist-list1)
+                   root-leveln-list (append root-leveln-list (list root-leveln-list1)))
+             (setf totaln (+ totaln return-n))|#
+
+             ;;APPEND NODELIST 
+             (when nodelist
+               (setf nodelist (append nodelist (list subtree))
+                     flat-dims-list (append flat-dims-list (list flat-dims-list1))
+                     tree-leveln-list (append tree-leveln-list (list tree-leveln-list1))
+                    totaln (+ totaln totaln1)))
+             (afout 'out (format nil "END RECURSE: item= ~A~% level-nodelists= ~A return-tree= ~A~%  subtree= ~A~%  nodelist= ~A~% " item level-nodelists return-tree subtree nodelist))
+             ;;(BREAK "END RECURSE")
+             ;;end mvb, sublist-recurse clause
+             ))
+          ;;first item past dim must be a key or end of list
+          ((equal item sublistkey)
+           (setf next-sublist-p T
+                 previous-item=key-p T
+                 nodelist (append nodelist (list item)))
+           )
+          ((member item all-keys :test 'equal)
+           (setf previous-item=key-p T
+                 nodelist (append nodelist (list item)))
+           ;;end member key
+           )
+          (previous-item=key-p
+           (setf previous-item=key-p NIL)
+           (setf nodelist (append nodelist (list item)))
+           )
+          ;;IF NOT A KEY OR KEYVALUE (filtered out above), MUST BE NEW DIM
+          ((or item last-level-item-p)        
+           ;;CLOSE PREVIOUS NODELIST AND APPEND LEVEL-NODELISTS
+           (when nodelist
+             (setf level-nodelists (append level-nodelists (list nodelist)))
+             (afout 'out (format nil "1-APPENDED LEVEL-NODELISTS= ~A ITEM= ~a" level-nodelists item))
+             )         
+           ;;START NEW NODELIST, SINCE ITEM MUST BE A DIM (if end of list or no)
+           (cond
+            (root-level-dimlist
+             (setf dim item 
+                   dimsymstr (format nil "~A~A~A" root-level-dimsymstr
+                                     root-separator item)
+                   dimlist (append root-level-dimlist (list  item)))
+             (setf parent-dimlist dimlist
+                   parent-dimsymstr (format nil "~A~A~A" root-level-dimsymstr 
+                                            root-separator item))
+             )
+            (t (setf dim item
+                     dimsymstr (format nil "~A" item)
+                     dimlist (list  item)
+                     parent-dimlist dimlist
+                     parent-dimsymstr (format nil "~A" item)
+                     )))
+           ;;NEW NODELIST           
+           (setf nodelist (list dimlist dimsymstr))
+           ;;end T cond
+           ))
+         (afout 'out (format nil "END LOOP: item= ~A nodelist= ~A~% dimlist= ~A~%dimsymstr= ~A dim=~A~% level-nodelists= ~A "item nodelist dimlist dimsymstr dim level-nodelists))
+         ;;end let, loop, when listp clause
+         ))
+      ;;APPEND RETURN-TREE WITH LEVEL-NODELISTS
+      ;;UPDATE PARENT DIMLISTS
+      (when  nodelist        
+        (setf level-nodelists (append level-nodelists (list nodelist))))            
+      (setf return-tree level-nodelists)
+      ;;end when listp
+      )
+    (setf tree-leveln-list (append tree-leveln-list (list tree-leveln)))
+    (values  return-tree  flat-dims-list tree-leveln-list totaln bottom-dimlist)
+ ;;to set frame values: *tree-rootn-list *tree-flat-rootn-list *tree-root-leveln-list *totaln-nodes  *tree-roots-list)
+    ;;end let, make-tree-from-dimlists
+    ))
+;;TEST
+;; SSSS TEST ON REAL CS/ART SYM TREES
+;;  (setf *test-artdims-tree1 '(cs :s (hs :s (1 :s (1 2)  2 :s (1  2  3)   3)  ms :s (ms1 :s (1 2)))))
+;; (make-tree-from-dimlists *test-artdims-tree1)
+;; WORKS=
+#|(((CS)   "CS"  :S
+  (((CS HS)    "CS.HS"    :S
+    (((CS HS 1)      "CS.HS.1"      :S
+      (((CS HS 1 1) "CS.HS.1.1") ((CS HS 1 2) "CS.HS.1.2")))
+     ((CS HS 2)      "CS.HS.2"      :S
+      (((CS HS 2 1) "CS.HS.2.1")
+       ((CS HS 2 2) "CS.HS.2.2")
+       ((CS HS 2 3) "CS.HS.2.3")))
+     ((CS HS 3) "CS.HS.3")))
+   ((CS MS)    "CS.MS"    :S
+    (((CS MS MS1)      "CS.MS.MS1"      :S
+      (((CS MS MS1 1) "CS.MS.MS1.1") ((CS MS MS1 2) "CS.MS.MS1.2")))))))))|#

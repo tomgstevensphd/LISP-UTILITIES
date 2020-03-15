@@ -1,0 +1,48 @@
+;;**********************  U-experimental-funs.lisp **************************
+;;
+;;
+(defun make-multi-dim-sequence (root n-dim-elements &key (begin-n 1) dim-elements-list
+                                     make-list-p set-to-value (betw-str "") (end-str "") (make-symbol-p T))
+  "In  Unless make-list-p, returns a new sequence of root,betw-str,dim-element,end-str"
+  (let*
+      ((cur-dim-element)
+       (end-n (- n-dim-elements begin-n))
+       (pre-seq)
+       (new-seq)
+       (new-symbol)
+       )
+    (loop
+     for n from begin-n to end-n
+     do
+     (cond
+      (dim-elements-list (setf dim-element (nth n dim-elements-list)))      
+
+     (cond
+      ((null make-list-p)
+       (setf new-seq (format nil "~A~A~A~A" root  betw-str dim-element end-str))
+       (when make-symbol-p
+         (setf new-symbol (my-make-symbol new-seq)))
+       (when  set-to-value
+         (set new-symbol set-to-value))
+       )
+      (make-list-p
+        (if (equal betw-str "")
+            (setf pre-seq (list dim-element))
+          ;;otherwise add betw-str first
+         (setf pre-seq (list betw-str dim-element)))         
+        (if (equal end-str "")
+            (setf new-seq (append root (list preseq)))
+          ;;otherwise add end-str
+            (setf new-seq (append root (list preseq) (list end-str))))
+       
+       (when make-symbol-p
+         (setf new-symbol (my-make-symbol new-seq)))
+       ;;new-symbol-p and set-to-value do not apply to lists
+       ;;end make-list-p,cond
+       ))
+     ;;end loop
+     )
+     
+      (values new-seq new-symbol)
+      ;;end let, make-multi-dim-sequence      
+      ))
