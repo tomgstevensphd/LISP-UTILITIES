@@ -167,7 +167,7 @@
     (capi:destroy kbwin)
     ))
 ;;TEST
-;; (my-keybinds)
+ ;;(MY-KEYBINDS)
 ;; works, opens a help editor buffer and does not leave any other windows open
 
 #| OLD, works, but leaves a container window open
@@ -309,4 +309,33 @@ First step of expansion:
 Final expansion:
 (LET* ((#:|Store-Var-409352| (+ A 1))) (SETQ A #:|Store-Var-409352|))|#
 
+
+;;DEFINED IN .LISPWORKS ===========================
+;;
+#|;;MY-LW-INIT
+;;2019, 2020
+;;ddd
+(defun MY-LW-INIT (&optional projects-list  &key (default-projects-list 
+                                                  '(**CS **UCS  **SHAQ **U-ETC))  
+                             (my-keybinds-p T))
+  "Projects include **U-ETC **CS **UCS **ACTR **ART **SHAQ **SCRSAV projects-list is a LIST of projects."
+  (when (null projects-list)
+    (setf projects-list default-projects-list))
+  (my-open-buffers *open-editor-buffers*)
+  (compile-file "C:/3-TS/LISP PROJECTS TS/1-LW-INIT/0 MY-LW-INIT.lisp" :load T)
+  (my-open-buffers *open-edit-buffers-new-window :open-new-windows-p T)
+  (eval  `(my-edit-projects (quote ,projects-list)))
+  (my-keybinds)
+  )
+;; (my-lw-init (**cs))
+;;MLI
+;;2019
+;;ddd
+(defmacro  MLI (&rest projects-list)
+  "In .LISPWORKS, can just put proj syms eg. **U-ETC **CS **UCS **ACTR **ART **SHAQ **SCRSAV after mli"
+  (setf **mactest
+  `(MY-LW-INIT (quote ,projects-list))
+  ;;"C:/3-TS/LISP PROJECTS TS/0 MY-LW-INIT.lisp"
+  ))
+|#
 

@@ -69,11 +69,15 @@
     ;;end let, my-call-system
     ))
 ;;TEST
+;; (my-call-system "vol g:")
+;; works= " Volume in drive G is PD-Media
+;; Volume Serial Number is 064E-B394"
 ;;;; (my-call-system "vol c:")
 ;;works= " Volume in drive C is OS
 ;;   Volume Serial Number is 4058-766B"
 
 ;; (my-call-system "dir c:\\temp" )
+;; 
 #| 
  " dir c:\\temp
  Volume in drive C is OS
@@ -101,7 +105,7 @@ etc etc etc"
 (defun make-strings-from-stream-output (function args outstream-n
                                         &key divide-string-into-tokens-p
                                         return-output-string-p   divide-lines-into-parts           
-                                                       (max-lines 1000))
+                                                       (max-lines 25000))
   "U-System, RETURNS (values all-line-strings  all-line-lists output-string divided-line-lists). DIVIDE-STRING-INTO-TOKENS-P makes token lists within all-line-lists. VERY USEFUL FOR SPECIAL DOS & SYSTEM METHODS/FUNCTIONS that OUTPUT STREAMS. When DIVIDE-LINES-INTO-PARTS= Eg (1 3 rest), divides each line into parts (if possible) with n= num tokens for that part. REST= rest of tokens."
   (let*
       ((all-line-strings)
@@ -253,13 +257,14 @@ The device is not ready.
   "U-System   RETURNS (values vol-name voldrivestr volinfo drivestr)
     INPUT: drive can be sym or str, but str must end in a colon."
   (let*
-      ((drivestr  (cond ((symbolp drive) (setf drivestr (format nil "~A:" drive)))
-                        (t (setf drivestr drive))))
+      ((drivestr  (cond ((symbolp drive) (format nil "~A:" drive))
+                        (t drive)))
        (drivename (delete-final-string '("\\" "/" ) drivestr))
        (volinfo  (my-call-system (format nil "vol ~A" drivename)))
        (voldrivestr (read-line (make-string-input-stream volinfo begin-n1)))
        (vol-name (subseq voldrivestr begin-n2 ))
        )
+    ;;(break "volinfo drivename")
     (values vol-name voldrivestr volinfo drivestr)
     ;;end let, find-drive-name
     ))
@@ -269,7 +274,10 @@ The device is not ready.
 ;; Volume Serial Number is 4058-766B
 ;;"     "C:"
 
-
+;; (my-call-system "vol C:")
+;;works= " Volume in drive C is OS   Volume Serial Number is 4058-766B  " 0
+;; (my-call-system "vol E:")
+;;works= " Volume in drive E is Tom-Se5tbHD-Main   Volume Serial Number is B8F3-358D  "  0
 
 
 

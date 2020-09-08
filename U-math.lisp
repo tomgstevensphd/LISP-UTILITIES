@@ -17,6 +17,7 @@
        (variance)
        (SD)
        (sum-sq-scores 0)
+       (sq-dif-score)
        )
     ;;find total, mean
     (setf total-score (* 1.000 (apply '+ score-list))
@@ -26,11 +27,15 @@
        for score in score-list
        with dif-sq-score
        do
+       (let*
+           ((dif-sq-score)
+            (dif-score)
+            )
        (setf dif-score (- score   mean)
              sq-dif-score (* dif-score dif-score)
              sum-sq-scores (* (+ sum-sq-scores sq-dif-score) 1.000))
        ;;end loop
-       )
+       ))
     (setf variance (/ sum-sq-scores num-scores)
           SD (sqrt variance))
     (values  mean sd variance total-score num-scores sum-sq-scores)
@@ -62,7 +67,6 @@
        ;;(N (list-length num-list))
        (norm)
        (sumsq 0.0)
-       (sum 0.0)
        (ratio)
        (ratio-list)
        (return-ratios)
@@ -281,6 +285,8 @@ CL-USER 11 > (/ 7 3) = 7/3
        (sweep-angle)
        (len-cntrline)
        (len-start-oppline) ;;line perpend to x-axis from center-x,y
+       (center-xx)
+       (center-yy)
        )
     ;;FIND CENTER POINT(S)
     (cond
@@ -303,7 +309,6 @@ CL-USER 11 > (/ 7 3) = 7/3
         ;;(break "0")
         ;;end mvb, t, cond
         )))
-
     ;;CALC  len-start-oppline, START & SWEEP RADIANS, ANGLES
     (setf len-start-oppline (- y1 center-y)
           start-angle-radians (round-real (asin (/ len-start-oppline radius)) :dec dec)
@@ -332,11 +337,14 @@ CL-USER 11 > (/ 7 3) = 7/3
 ;;2018
 ;;ddd
 (defun calc-angle-to-radians (angle) 
-"U-math   RETURNS radians . Note:  radians = pi * angle/180"
-  (when (numberp angle)
-    (setf radians (/ (* pi angle) 180)))
-  ;;end let, calc-angle-to-radians
-  )
+  "U-math   RETURNS radians . Note:  radians = pi * angle/180"
+  (let*
+      ((radians (when (numberp angle)
+                  (/ (* pi angle) 180)))
+       )
+    radians
+    ;;end let, calc-angle-to-radians
+    ))
 ;;TEST
 ;; (calc-angle-to-radians 45) = 0.7853981633974483D0  
 ;; (calc-angle-to-radians 90) = 1.5707963267948966D0
@@ -345,16 +353,27 @@ CL-USER 11 > (/ 7 3) = 7/3
 ;; (calc-angle-to-radians 270) = 4.71238898038469D0
 ;; (calc-angle-to-radians 360) = 6.283185307179586D0
 
+
+
 ;;CALC-RADIANS-TO-ANGLE
 ;;2018
 ;;ddd
-(defun calc-radians-to-angle (radians) 
-"U-math   RETURNS angle . Note:  angle = (180 * radians)/pi "
-  (when (numberp radians)
-    (setf angle  (* (/ 180 pi) radians)))
+(defun calc-radians-to-angle (radians &key (round-dec 3)) 
+  "U-math   RETURNS angle . Note:  angle = (180 * radians)/pi "
+  (let
+      ((angle 
+        (when (numberp radians)
+          (* (/ 180 pi) radians)))
+       )
+    (when round-dec
+      (setf angle (my-round angle :dec round-dec)))
+    angle
     ;;end let, calc-radians-to-angle
-    )
+    ))
+;;TEST
 ;; (calc-radians-to-angle pi) = 180.0D0  180.0D0 
+;; (calc-radians-to-angle 1.5) =  85.944
+;; (calc-radians-to-angle 1.5 :round-dec nil) = 85.94366926962349D0
 
 
 
@@ -362,7 +381,8 @@ CL-USER 11 > (/ 7 3) = 7/3
 ;;CALC-RADIANS-FROM-TRIANGLE
 ;;2018-02
 ;;ddd
-(defun calc-radians-from-triangle (len-adjacent len-opposite &key len-hypot)
+(defun calc-radians-from-triangle (len-adjacent len-opposite &key len-hypot
+                                                round-dec)
   "U-math  RETURNS (values radians type ratio) of angle from sides of right triangle. TYPE either asin acos or atan.  NOTE: #C(real imaginary) components of number"
   (let*
       ((radians)
@@ -382,6 +402,8 @@ CL-USER 11 > (/ 7 3) = 7/3
       (setf ratio (/ len-opposite len-adjacent)
             type 'atan
             radians (atan ratio))))
+    (when round-dec
+      (setf radians (my-round radians :dec round-dec)))
     ;; (break)
     (values radians type ratio)
     ;;end let, calc-radians-from-triangle
@@ -420,9 +442,29 @@ CL-USER 11 > (/ 7 3) = 7/3
 ;;         COT      infin   (sqrt 3)         1           1/(sqrt 3)      0
 
 
-;; (
-
-
+;;CALC-ANGLES-FROM-TRIANGLE
+;;2018-02
+;;ddd
+(defun calc-angle-from-triangle (len-adjacent len-opposite &key len-hypot
+                                              (round-dec 3))
+  "U-math  RETURNS (values radians type ratio) of angle from sides of right triangle. TYPE either asin acos or atan.  NOTE: #C(real imaginary) components of number"
+  (let*
+      ((angle)
+       )
+    (multiple-value-bind (radians type ratio)
+        (calc-radians-from-triangle len-adjacent len-opposite 
+                                    :len-hypot len-hypot)
+      (setq angle (calc-radians-to-angle radians))     
+      (when round-dec
+        (setf angle (my-round angle :dec round-dec)))
+      (values angle radians type ratio)
+      ;;end mvb, let, calc-angle-from-triangle
+  )))
+;;TEST
+;; (calc-angle-from-triangle 10 10)
+;; works= 45.0   0.7853982 ATAN  1
+;; w round-dec nil
+;; works= 45.00000125223908D0   0.7853982  ATAN  1
 
 
 
@@ -497,6 +539,11 @@ CL-USER 11 > (/ 7 3) = 7/3
        (yy) ;;  (round-real (- y3 (/ (* len-centerline 0.5 (- x2 x1))  min-radius)) :dec dec))
        (cent-x)
        (cent-y)
+       (sin-half-sweep)
+       (x0)
+       (y0)
+       (xx0)
+       (yy0)
        )
     (cond
      (half-sweep
@@ -696,10 +743,12 @@ CL-USER 11 > (/ 7 3) = 7/3
     (setf radius (* rel-radius xy1-xy2)))
   (let*
       ((xx0)
-        (yy0)
-        (pts-dist)
-        (arc-points)
-        )
+       (yy0)
+       (pts-dist)
+       (arc-points)
+       (incr-angle)
+       (incr-angle-rads)
+       )
    
     ;;CALC THE OVERALL ANGLE?
     (unless xy1-xy2angle
@@ -722,13 +771,13 @@ CL-USER 11 > (/ 7 3) = 7/3
     ;;CALC OVERALL ANGLE BETW X1 and X2 IF NOT GIV
     (unless (and xy1-xy2angle start-angle xy1-xy2angle-rads
                  start-angle-rads x2 y2)
-           (multiple-value-setq (x2 y2 xy1-xy2angle start-angle radius radius2 
-                             xy1-xy2angle-rads start-angle-rads)
-         (calc-arc-point x0 y0 x1 y1 xy1-xy2angle   
-                         :start-angle start-angle :radius radius :radius2   radius2 
-                         :rel-radius2-1 rel-radius2-1 :dec dec
-                         :angle-rads xy1-xy2angle-rads :start-angle-rads  start-angle-rads 
-                         :clockwise-p  clockwise-p))) ;; :x3 y3 )));; :xy1-xy xy0-xy3 )))
+      (multiple-value-setq (x2 y2 xy1-xy2angle start-angle radius radius2 
+                               xy1-xy2angle-rads start-angle-rads)
+          (calc-arc-point x0 y0 x1 y1 xy1-xy2angle   
+                          :start-angle start-angle :radius radius :radius2   radius2 
+                          :rel-radius2-1 rel-radius2-1 :dec dec
+                          :angle-rads xy1-xy2angle-rads :start-angle-rads  start-angle-rads 
+                          :clockwise-p  clockwise-p))) ;; :x3 y3 )));; :xy1-xy xy0-xy3 )))
 
     ;;DIVIDE THE XY1-XY2ANGLE INTO N-PTS PARTS
     (setf incr-angle (/ xy1-xy2angle n-pts)
@@ -740,21 +789,21 @@ CL-USER 11 > (/ 7 3) = 7/3
      do
      (let*
          ((angle1 (* n incr-angle))
-          (angle1-rads (* n incr-angle-rads))          
+          (angle1-rads (* n incr-angle-rads))                    
           )
-      ;;calc each point
-     (multiple-value-bind (x y angle start-angle radius radius2 
-                             angle-rads start-angle-rads)
-         (calc-arc-point x0 y0 x1 y1 angle1   
-                         :start-angle start-angle :radius radius :radius2   radius2 
-                         :rel-radius2-1 rel-radius2-1 :dec dec
-                         :angle-rads angle1-rads :start-angle-rads  start-angle-rads 
-                         :clockwise-p  clockwise-p) ;;:x3 y3  :xy1-xy xy0-xy3 )
-       ;;APPEND THE NEW X,Y POINT
-       (setf arc-points (append arc-points (list 
-                                            (list x y (round-real angle1 :dec dec)))))
-      ;;end mvb,let, loop
-       )))
+       ;;calc each point
+       (multiple-value-bind (x y angle start-angle radius radius2 
+                               angle-rads start-angle-rads)
+           (calc-arc-point x0 y0 x1 y1 angle1   
+                           :start-angle start-angle :radius radius :radius2   radius2 
+                           :rel-radius2-1 rel-radius2-1 :dec dec
+                           :angle-rads angle1-rads :start-angle-rads  start-angle-rads 
+                           :clockwise-p  clockwise-p) ;;:x3 y3  :xy1-xy xy0-xy3 )
+         ;;APPEND THE NEW X,Y POINT
+         (setf arc-points (append arc-points (list 
+                                              (list x y (round-real angle1 :dec dec)))))
+         ;;end mvb,let, loop
+         )))
     (values arc-points (round-real x0 :dec dec) (round-real y0 :dec dec)
             x2 y2 xy1-xy2angle start-angle 
             radius radius2 xy1-xy2angle-rads start-angle-rads)   
@@ -1033,6 +1082,93 @@ CL-USER 11 > (/ 7 3) = 7/3
 ;; (calc-dist-betw-2-pts  10  20   40 50) = 42.426407
 
 
+;;solve for x2
+;;  (expt distance 2.0) = (+ (expt (- x2 x1) 2.0) (expt (- y2 y1) 2.0))
+;; (expt (- x2 x1) 2.0)j = (- (expt distance 2.0)(expt (- y2 y1) 2.0))
+;; (- x2 x1) =  (sqrt (- (expt distance 2.0)(expt (- y2 y1) 2.0)))
+;;  x2 =    (+ x1 (sqrt (- (expt distance 2.0)(expt (- y2 y1) 2.0))))
+
+;;solve for y2:
+;;  (expt distance 2.0) = (+ (expt (- x2 x1) 2.0) (expt (- y2 y1) 2.0))
+;;  (expt (- y2 y1) 2.0) =  (- (expt distance 2.0) (expt (- x2 x1) 2.0))
+;;  (- y2 y1)  =  (sqrt (- (expt distance 2.0) (expt (- x2 x1) 2.0)))
+;;    y2 = (-  (realpart (sqrt (- (expt distance 2.0) (expt (- x2 x1) 2.0))) y1))
+;;solve for x2
+
+
+
+
+;;CALC-RANGLE-SIDE
+;;2020
+;;ddd
+(defun calc-rangle-side (len-hyp len-side1)
+  "U-math"
+  (let*
+      ((sq-len-side2 (- (expt len-hyp 2.0) (expt len-side1 2.0)))
+       (len-side2 (sqrt sq-len-side2))
+       )
+    (values len-side2 sq-len-side2)
+    ;;end let,calc-rangle-side
+    ))
+;;TEST
+;; (calc-rangle-side 10 5) = 8.6602545   75.0
+
+
+
+;;CALC-RANGLE-HYPOT
+;;2020
+;;ddd
+(defun calc-rangle-hypot (len-side1 len-side2)
+  "U-math"
+  (let*
+      ((sq-len-hypot (+ (expt len-side1 2.0) (expt len-side2 2.0)))
+       (len-hypot (sqrt sq-len-hypot))
+       )
+    (values len-hypot sq-len-hypot)
+    ;;end let,calc-rangle-hypot
+    ))
+;;TEST
+;; (calc-rangle-hypot 8.6602545  5.0)  = 10.0   100.00001
+
+
+;;CALC-HALF-ARROW-XYS
+;;2020
+;;ddd
+;;DOES NOT WORK--Except in limited cases
+;; Math became to complex/time consuming!!
+#|(defun calc-half-arrow-xys (front-x front-y end-cent-x end-cent-y 
+                               len-side len-vertical)
+  "U-math"   ;;len-side = d2 len-vertical = d3
+  (let*
+      ((len-center-line (calc-dist-betw-2-pts front-x front-y 
+                                              end-cent-x end-cent-y)) ;;d1
+       (len-arrowXcent (calc-rangle-side len-side len-vertical)) ;;d4
+       (len-xy2-xya (calc-rangle-hypot len-vertical 
+                                       (- len-center-line len-arrowXcent))) ;;d7
+       (y-arrow-end1 (abs (/ (- (expt len-xy2-xya 2.0) (expt len-side 2.0))
+                       (* 2 (-  front-y end-cent-y)))))
+       (x-arrow-end1 (abs (- front-x 
+                       (realpart (sqrt (- (expt (- front-y y-arrow-end1) 2.0)
+                                                  (expt len-side 2.0)))))))
+       ;;sideb 
+       ;;nothing like above works.  Did math & found equation too complex
+       ;; to solve w/o extensive work
+#|       (y-arrow-end2 (/ (- (expt len-xy2-xya 2.0) (expt len-side 2.0))
+                       (* 2 (-  front-y end-cent-y)))00.+                                                                                 )
+       (x-arrow-end2 (- front-x 
+                       (realpart (sqrt (- (expt (- front-y y-arrow-end2) 2.0)
+                                                  (expt len-side 2.0))))))|#
+       )
+  (values  x-arrow-end1  y-arrow-end1 len-arrowXcent)
+  ))|#
+;;TEST
+;; (calc-half-arrow-xys 300 250 100 150 20 10)
+;; 266.8338  211.27022  17.320509
+;; (for graphic test, see H-GP-Drawing.lisp)
+;; (calc-half-arrow-xys 300 250 100 150 8 4)
+;; ;; (calc-half-arrow-xys 400 50 600 100 8 4)
+
+
 
 
 ;; DELETE =========================================
@@ -1113,6 +1249,7 @@ There are either two points which both have the desired distances. But based on 
        (opp-angle)
        (sin-opp) 
        (opp-radians)
+       (angle-radians)
        )
     ;;Hypot must be >= either other side for right triangle.
     (unless (or (and adjacent hypot (> adjacent hypot))
@@ -1324,7 +1461,23 @@ There are either two points which both have the desired distances. But based on 
        (y4)
       (xx1)
        (yy1) 
-       ;;here
+       (xy1-xy2sq)
+       (xy1xy2sq)
+       (angle0+trans-tan)
+       (angle0+trans-rads)
+       (opp-rads0)
+       (angle0-rads) 
+       (xy1-xy3sq)
+       (angle0+trans)
+       (opp-angle0)
+       (radians0)
+       (xy2-xy4)
+       (x4a-y2a)
+       (x1a-x5a)
+       (x4a-y2a)
+       (xx1)
+       (yy1)
+       (xy1a-xy5a)
        )
     (when (and x1 x2)
       (setf xy1-xy2  (calc-dist-betw-2-pts x1 y1 x2 y2)))
@@ -1610,6 +1763,9 @@ There are either two points which both have the desired distances. But based on 
        (trans-scale)
        (get-trans-list)
        (transform)
+       (rads)
+       (tan-rads)
+       (p)
        )
     (when invert-y-p
       (setf y1 (- y1)
@@ -1668,6 +1824,7 @@ There are either two points which both have the desired distances. But based on 
        (pre-y)
        (y1)
        (y1w)
+       (transform)
        )
       ;;FIND RADIANS
       (cond

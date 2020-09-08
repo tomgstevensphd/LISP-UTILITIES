@@ -32,6 +32,7 @@
        (metaclass)
        (class-inst-sym)
        (class-inst)
+       (class-inst-def)
        (defclass-call)
        (instance-initargs)
        (parents-list  `(:parents (quote ,superclasses))) ;; `(:parents ,superclasses-syms))
@@ -253,6 +254,7 @@ NEW-CLASS4
   "In U-clos.lisp, sets instance-sym to make-instance, and adds to class-instances slot-value. Default instance-sym= *class-sym-inst. If make-def-stream, sends def to that stream instead of evaling it."
   (let
       ((make-instance-call)
+       (write-form)
        ;;(new-initargs)  ;;use with below later??       
      ;;  (class-instances-slot) ;;fix later, makes default only  option
       ;;  (instance-sym)  ;;fix later, makes default only  option
@@ -508,6 +510,38 @@ CL-USER 13 > (slot-value  *sT1HigherSelf-inst 'raw-score)
 
 ;;XXX------------------- FUNCTIONS TO ACCESS CLASSES AND INSTANCES  ----------------
 
+;;CLASSNAME-P
+;;2020
+;;ddd
+(defun classname-p (name  &key  )
+  "U-clos  RETURNS    INPUT:  "
+  (let*
+      ((result)
+       )
+    (ignore-errors
+       (when (stringp name)
+        (setf name (my-make-symbol name)))
+           (setf result (find-class name)))
+    (values result )
+    ;;end let, classname-p
+    ))
+;;TEST
+;; WORKS
+;; (classname-p 'sworldview)
+;; =  #<STANDARD-CLASS SWORLDVIEW 2498F63F>
+;; (classname-p 'thisxx) = NIL
+;; (classname-p "sworldview") = #<STANDARD-CLASS SWORLDVIEW 2498F6
+
+#| (defun load-init-file (program user-homedir-pathname)
+   (let ((win nil))
+     (ignore-errors ;if this fails, don't enter debugger
+       (load (merge-pathnames (make-pathname :name program :type :lisp)
+                              user-homedir-pathname))
+       (setq win t))
+     (unless win (format t "~&Init file failed to load.~%"))
+     win))|#
+;; (load-init-file "THIS" "PATH")
+
 
 
 ;;FIND-CLASSNAME
@@ -542,7 +576,7 @@ CL-USER 13 > (slot-value  *sT1HigherSelf-inst 'raw-score)
 ;;GET-CLASS-INST
 ;;
 ;;ddd
-(defun get-class-inst (class)
+(defun get-class-inst (class &key (delete-pre "<"))
   "In U-clos.lisp, class can be instance-sym, class string or class symbol. RETURNS   (values class-inst-sym class-inst-object class-inst-string  class-string)"
   (let
       ((class-string)
@@ -558,9 +592,10 @@ CL-USER 13 > (slot-value  *sT1HigherSelf-inst 'raw-score)
           class-string (subseq class-inst-string 1 (- len-str 5))
           class-inst-sym (my-make-symbol class-inst-string)))
      (T
-    (setf class-string (format nil "~A" class)
+      (setf class-string (delete-begin-string '("<") (format nil "~A" class))
           class-inst-string (format nil "*~A-inst" class-string)
           class-inst-sym (my-make-symbol class-inst-string))))
+
     (when  (and (symbolp (quote class-inst-sym))(boundp class-inst-sym))
       (setf  class-inst-object (eval class-inst-sym)))
     ;;(break "end get-class-inst")
@@ -568,6 +603,7 @@ CL-USER 13 > (slot-value  *sT1HigherSelf-inst 'raw-score)
     ))
 ;;TEST
 ;;If use instance instead of class
+;; (get-class-inst 'SWORLDVIEW)
 ;; (get-class-inst '*sworldview-inst)
 ;; works= *SWORLDVIEW-INST  #<SWORLDVIEW 2225404F>  "*SWORLDVIEW-INST"  "SWORLDVIEW"
 ;;
@@ -1301,7 +1337,8 @@ class1-instances|#
             class-name class))
      (t nil))
     ;;get class-obj
-    (setf class-obj (find-class  class-sym))
+    (when (classname-p class-sym)
+      (setf class-obj (find-class  class-sym)))
     (values class-obj class-sym class-name)
     ;;end let, my-get-class
     ))
@@ -1365,8 +1402,8 @@ class1-instances|#
 ;; (get-class-slots 'sworldview :return-slotname-syms-p T :return-slotname-keys-p T )
 ;; works= 
 ;;slotname-syms= (NAME NAME-STRING LABEL TITLE DESCRIPTION OBJECT-DOCS CLASS-INSTANCE PARENTS CHILDREN CLASS-INSTANCES UPDATED-DATE PREVIOUS-NAMES DATA-NAME-STRING DATA-LABEL DATA-DESCRIPTION SYSTEM SYSTEM-LIST ASSESSMENT-TYPE SCALE-GROUP-NAME SCALE-GROUP-DESCRIPTION SCALE-CLASSES SCALE-INSTANCES NUM-QUESTIONS SCALE-QUESTIONS FIRING-ORDER-LIST INCL-IN-RESULTS-P SPSS-MATCH QUEST-SELECTION-TYPE REVERSE-SCORED-P SCORING-FORMULA RAW-SCORE RELATIVE-SCORE MEAN-SCORE VARIANCE STANDARD-DEVIATION SAMPLE-N RANGE MAX-POSSIBLE-VALUE MIN-POSSIBLE-VALUE QUESTION-DATA-LISTS FRAME FRAME-TITLE FRAME-DIM-WIDTH FRAME-DIM-HEIGHT FRAME-CREATED-P HELP-PRIORITY HELP-INFO HELP-LINKS HELP-RESOURCES SCALE-NAME IS-SCALE-P SCALE-INSTANCE SUBSCALES COMPOSITE-SCALE-P)
-;;slotname-strs= ("NAME" "NAME-STRING" "LABEL" "TITLE" "DESCRIPTION" "OBJECT-DOCS" "CLASS-INSTANCE" "PARENTS" "CHILDREN" "CLASS-INSTANCES" "UPDATED-DATE" "PREVIOUS-NAMES" "DATA-NAME-STRING" "DATA-LABEL" "DATA-DESCRIPTION" "SYSTEM" "SYSTEM-LIST" "ASSESSMENT-TYPE" "SCALE-GROUP-NAME" "SCALE-GROUP-DESCRIPTION" "SCALE-CLASSES" "SCALE-INSTANCES" "NUM-QUESTIONS" "SCALE-QUESTIONS" "FIRING-ORDER-LIST" "INCL-IN-RESULTS-P" "SPSS-MATCH" "QUEST-SELECTION-TYPE" "REVERSE-SCORED-P" "SCORING-FORMULA" "RAW-SCORE" "RELATIVE-SCORE" "MEAN-SCORE" "VARIANCE" "STANDARD-DEVIATION" "SAMPLE-N" "RANGE" "MAX-POSSIBLE-VALUE" "MIN-POSSIBLE-VALUE" "QUESTION-DATA-LISTS" "FRAME" "FRAME-TITLE" "FRAME-DIM-WIDTH" "FRAME-DIM-HEIGHT" "FRAME-CREATED-P" "HELP-PRIORITY" "HELP-INFO" "HELP-LINKS" "HELP-RESOURCES" "SCALE-NAME" "IS-SCALE-P" "SCALE-INSTANCE" "SUBSCALES" "COMPOSITE-SCALE-P")
-;;slotname-keys= (:NAME :NAME-STRING :LABEL :TITLE :DESCRIPTION :OBJECT-DOCS :CLASS-INSTANCE :PARENTS :CHILDREN :CLASS-INSTANCES :UPDATED-DATE :PREVIOUS-NAMES :DATA-NAME-STRING :DATA-LABEL :DATA-DESCRIPTION :SYSTEM :SYSTEM-LIST :ASSESSMENT-TYPE :SCALE-GROUP-NAME :SCALE-GROUP-DESCRIPTION :SCALE-CLASSES :SCALE-INSTANCES :NUM-QUESTIONS :SCALE-QUESTIONS :FIRING-ORDER-LIST :INCL-IN-RESULTS-P :SPSS-MATCH :QUEST-SELECTION-TYPE :REVERSE-SCORED-P :SCORING-FORMULA :RAW-SCORE :RELATIVE-SCORE :MEAN-SCORE :VARIANCE :STANDARD-DEVIATION :SAMPLE-N :RANGE :MAX-POSSIBLE-VALUE :MIN-POSSIBLE-VALUE :QUESTION-DATA-LISTS :FRAME :FRAME-TITLE :FRAME-DIM-WIDTH :FRAME-DIM-HEIGHT :FRAME-CREATED-P :HELP-PRIORITY :HELP-INFO :HELP-LINKS :HELP-RESOURCES :SCALE-NAME :IS-SCALE-P :SCALE-INSTANCE :SUBSCALES :COMPOSITE-SCALE-P)
+;;slotname-strs= ("NAME" "NAME-STRING" "LABEL" "TITLE" "DESCRIPTION" "OBJECT-DOCS" "CLASS-INSTANCE" "PARENTS" "CHILDREN" "CLASS-INSTANCES" "UPDATED-DATE" "PREVIOUS-NAMES" "DATA-NAME-STRING" "DATA-LABEL" "DATA-DESCRIPTION" "SYSTEM" "SYSTEM-LIST" "ASSESSMENT-TYPE" "SCALE-GROUP-NAME" "SCALE-GROUP-DESCRIPTION" "SCALE-CLASSES" "SCALE-INSTANCES" "NUM-QUESTIONS" "SCALE-QUESTIONS" "FIRING-ORDER-LIST" "INCL-IN-RESULTS-P" "SPSS-MATCH" "QUEST-SELECTION-TYPE" "REVERSE-SCORED-P" "SCORING-FORMULA" "RAW-SCORE" "RELATIVE-SCORE" "MEAN-SCORE" "VARIANCE" "STANDARD-DEVIATION" "SAMPLE-N" "RANGE" "MAX-POSSIBLE-VALUE" "MIN-POSSIBLE-VALUE" "QUESTION-DATA-LISTS" "FRAME" "FRAME-TITLE" "FRAME-DIM-WIDTH" "FRAME-DIM-HEIGHT" "FRAME-CREATED-P" "HELP-PRIORITY" "HELP-INFO" "HELP-LINKS" "HELP-RESOURCES" "SCALE-NAME" "IS-SCALE-P" "SCALE-INSTANCE" "SUBSCALES" "COMPOSITE-SCALE-P" "CSARTLOC")
+;;slotname-keys= (:NAME :NAME-STRING :LABEL :TITLE :DESCRIPTION :OBJECT-DOCS :CLASS-INSTANCE :PARENTS :CHILDREN :CLASS-INSTANCES :UPDATED-DATE :PREVIOUS-NAMES :DATA-NAME-STRING :DATA-LABEL :DATA-DESCRIPTION :SYSTEM :SYSTEM-LIST :ASSESSMENT-TYPE :SCALE-GROUP-NAME :SCALE-GROUP-DESCRIPTION :SCALE-CLASSES :SCALE-INSTANCES :NUM-QUESTIONS :SCALE-QUESTIONS :FIRING-ORDER-LIST :INCL-IN-RESULTS-P :SPSS-MATCH :QUEST-SELECTION-TYPE :REVERSE-SCORED-P :SCORING-FORMULA :RAW-SCORE :RELATIVE-SCORE :MEAN-SCORE :VARIANCE :STANDARD-DEVIATION :SAMPLE-N :RANGE :MAX-POSSIBLE-VALUE :MIN-POSSIBLE-VALUE :QUESTION-DATA-LISTS :FRAME :FRAME-TITLE :FRAME-DIM-WIDTH :FRAME-DIM-HEIGHT :FRAME-CREATED-P :HELP-PRIORITY :HELP-INFO :HELP-LINKS :HELP-RESOURCES :SCALE-NAME :IS-SCALE-P :SCALE-INSTANCE :SUBSCALES :COMPOSITE-SCALE-P :CSARTLOC)
 
 
 
@@ -1376,13 +1413,16 @@ class1-instances|#
 ;;ddd
 (defun get-all-slots&values (instance  &key (return-slotkeys-p t))
   "U-CLOS   RETURNS   (values key-values-list slotsyms slotnames) If return-slotkeys-p, returns keys as keywords, otherwise as symbols."
+  (let
+      ((key-values-list)
+       )
   (multiple-value-bind (slotsyms slotnames)
       (get-class-slots  instance)
     (setf key-values-list
       (get-slot-values instance slotsyms :return-slotkeys-p return-slotkeys-p))  
       (values key-values-list slotsyms slotnames)
       ;;end mvb,mvb get-all-slots&values
-      ))
+      )))
 ;;TEST
 ;; (get-all-slots&values '*sworldview-inst)
 ;; works= 
@@ -1533,8 +1573,8 @@ class1-instances|#
   (let*
       ((class-sym (cond ((symbolp class-name) class-name) 
                         ((stringp class-name) (my-make-symbol class-name))))
-       (class (find-class class-sym))
-       (subclasses (class-direct-subclasses class))
+       (class  (my-get-class class-sym))
+       (subclasses (when class (class-direct-subclasses class)))
        (subclass-names)
        (subclass-name)
        (superclass)
@@ -1544,16 +1584,17 @@ class1-instances|#
     (unless (stringp class-name)
       (setf class-name (format nil "~A" class-name)))
 
-    (loop
-     for subclass in subclasses
-     do     
-     ;; (setf subclass-string (format nil "~A" (print-object subclass NIL)))
-     (multiple-value-setq (subclass-name superclass instance-id
-                                         subclass-info-list)  
-         (find-object-info subclass))
-     (setf subclass-names (append subclass-names (list subclass-name)))
-     ;;end loop
-     ) 
+    (when subclasses
+      (loop
+       for subclass in subclasses
+       do     
+       ;; (setf subclass-string (format nil "~A" (print-object subclass NIL)))
+       (multiple-value-setq (subclass-name superclass instance-id
+                                           subclass-info-list)  
+           (find-object-info subclass))
+       (setf subclass-names (append subclass-names (list subclass-name)))
+       ;;end loop,when
+       ))
     ;;class-direct-subclasses above returns subclasses in reverse order
     (unless reverse-subclass-order-p
       (setf subclass-names (reverse subclass-names)
@@ -1632,6 +1673,8 @@ class1-instances|#
 
 
 
+
+
 ;;FIND-DIRECT-SUPERCLASS-NAMES
 ;;
 ;;ddd
@@ -1639,7 +1682,7 @@ class1-instances|#
   "In U-clos, RETURNS (values class-names superclasses subclass-sym subclass)"
   (let*
       ((subclass-sym (my-make-symbol subclass-name))
-       (subclass (find-class subclass-sym))
+       (subclass (my-get-class subclass-sym))
        (superclasses (class-direct-superclasses subclass))
        (class-names)
        )

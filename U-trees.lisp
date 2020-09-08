@@ -996,7 +996,7 @@ The default value of expandp-function is NIL so that there is NO AUTOMATIC EXPAN
           for item in tree-node-list
           for item-n from 0 to len-tree-node-list ;;not needed?
           do
-          (afout 'out (format nil "item= ~A item-n= ~A" item item-n))
+          ;;(afout 'out (format nil "item= ~A item-n= ~A" item item-n))
           ;;NO? Fixed in get-set- functions;; must first differentiate between a node-list and a nested-list before doing next cond
           (let*
               ((test-rootnlist)

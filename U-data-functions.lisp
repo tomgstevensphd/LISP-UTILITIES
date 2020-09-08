@@ -12,6 +12,7 @@
   (let 
       ((category-list)
        (category-qvarlist)
+       (return-qvar)
        )
     (multiple-value-setq (category-list return-qvar)
         (get-key-value-in-nested-lists (list (list category 0))
@@ -92,6 +93,9 @@
         for qvarlist in (cdr catlist)
         with qvar = nil
         do
+        (let
+            ((label)
+             )
         (cond
          ((null return-var&label-p)
         (cond
@@ -110,8 +114,8 @@
                                                        (format nil "~A  ~A~A~A" qvar add-quote label add-quote)))))
           (t (setf problems-list (append problems-list (list qvarlist)))))))       
         ;;end inner loop, clause
-        ))
-      (t (setf problems-list (append problems-list (list qvarlist)))))
+        )))
+      (t (setf problems-list (append problems-list (list catlist)))))
          ;;end outer loop
          )
     (values all-qvars-list all-categories-list  problems-list)
@@ -134,6 +138,8 @@
       ((date-string)
        (time)
        (unseparated-date-str)
+       (date)
+       (unsep-time)
        )
     (multiple-value-bind (sec min hour day month year)
         (decode-universal-time (get-universal-time))
@@ -283,6 +289,11 @@ ACMFINAN|#
 ;; (sort (list zz xx yy) '<) = (1 2 3)
  ;;
 
+
+
+
+
+
 ;;GET-MULTI-SELECTION-QUEST-VAR-VALUES
 ;;
 ;;ddd
@@ -295,9 +306,8 @@ ACMFINAN|#
         (if qvarlist  qvarlist ;;if provided in key
           ;;otherwise, find the qvarlist
           (eval `(get-key-value-in-nested-lists (quote (( ,qvar-category 0))) *SHAQ-question-variable-lists :return-list-p t))))
- ;;test (get-key-value-in-nested-lists (quote (( ugoals 0))) *SHAQ-question-variable-lists :return-list-p t)
-;; (find-qvar-selection-type 'ugoals)
-
+       ;;test (get-key-value-in-nested-lists (quote (( ugoals 0))) *SHAQ-question-variable-lists :return-list-p t)
+       ;; (find-qvar-selection-type 'ugoals)
        (length-multi-list (list-length multi-items-list))
        (primary-qvarlist) ;;later (car multi-items-list))
        (primary-qvar-sym)  ;; later(car primary-qvarlist))
@@ -305,7 +315,7 @@ ACMFINAN|#
        (primary-spss-match)
        (primary-java-var)
        (primary-qvar-sublist)
-         ;indiv item spss names
+       ;;indiv item spss names
        (q-spss-name) ;;for whole category (eg. occupation)
        (ans-name-list)  ;;spss var name for each item (eg. sales, teacher, etc)
        (ans-text-list) ;;actual text of answer items
@@ -319,6 +329,8 @@ ACMFINAN|#
        (primary-help-links)
        (quest-text-list) ;;PUT IN AS INSTR TEXT
        (qnum 0)
+       (q-name)
+       (answer-panel)
        ;;data info -- generally each item scored 0 or 1(checked)
        (data-type)       ;;usually integer
        (ans-data-list)   ;;list of  1's (1 1 1 ... 1)        

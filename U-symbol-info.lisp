@@ -19,6 +19,7 @@ When result-form is evaluated, var is bound and has the value nil.
 
 
 
+
 ;;MAKUNBOUND-NESTED-VARS
 ;;2019
 ;;ddd
@@ -29,6 +30,7 @@ When result-form is evaluated, var is bound and has the value nil.
   (let*
       ((unbound-vars)
        (not-unbound-vars)
+       (itemsym)
        )
     (cond
      ((listp nested-varlists)
@@ -61,10 +63,14 @@ When result-form is evaluated, var is bound and has the value nil.
           )))
       ;;end listp
       )
-     (t (when (and (stringp item) convert-strings-p)
-          (setf item (my-make-symbol item)))
-        (when (and (symbolp item)(not (constantp item)))
-          (setf unbound-vars (append unbound-vars (list (makunbound item)))))
+     (t (cond
+         ((and (stringp nested-varlists) convert-strings-p)
+          (setf itemsym (my-make-symbol nested-varlists)))
+         ((and (symbolp nested-varlists)(not (constantp nested-varlists)))
+          (setf itemsym nested-varlists))
+         (t nil))
+        (when itemsym
+          (setf unbound-vars (append unbound-vars (list (makunbound nested-varlists)))))
         ))
     (values unbound-vars not-unbound-vars)
     ;;let, makunbound-nested-vars
@@ -93,7 +99,8 @@ When result-form is evaluated, var is bound and has the value nil.
   (dolist (var varlist)
     (when  (and convert-strings-p (stringp var))
       (setf var (my-make-symbol var)))
-    (unless (or (constantp var)(stringp var)(not (boundp var)))
+    (unless (or (constantp var)(stringp var)
+                (not (symbolp var))(not (boundp var)))
       ;;(break)
       (makunbound `,var))
       (setf unbound-vars (append unbound-vars (list var)))
@@ -174,3 +181,53 @@ When result-form is evaluated, var is bound and has the value nil.
 ;;TEST
 ;; (my-make-keyword "THIS1") 
 ;; works= :THIS1  "THIS1"
+
+
+
+;;MY-SYMBOLP
+;;2020
+;;ddd
+(defun my-symbolp (item &key (not-keywordp T)(not-nil-p T))
+  "U-symbol-info.lisp. Filters out keywords and/or NILs & 'NILS"
+  (let
+      ((result (symbolp item))
+       )
+    (when (and not-keywordp (keywordp item))
+      (setf result NIL))
+    (when (and not-nil-p (equal  item 'NIL))
+      (setf result NIL))
+    result
+    ;;end let,my-symbolp
+    ))
+;;TEST
+;; (my-symbolp NIL) = nil
+;; (my-symbolp 'NIL) = NIL
+;; (my-symbolp :NEWKEY) = NIL
+;; (my-symbolp :NEWKEY  :not-keywordp NIL) = T
+;; (my-symbolp 'NIL  :not-nil-p NIL) = T
+;; (my-symbolp NIL  :not-nil-p NIL) = T
+    
+
+
+;;GET-SYM-DIMS
+;;2020
+;;ddd
+(defun get-sym-dims  (symbol &key (separators  '("."))) ;;caused probs "-")))
+  "In U-symbol, Converts a symbol (or string) into dims list. RETURNS (values dimslist rootstr dims-list dims-str)."
+  (let
+      ((symstr (cond ((stringp symbol) symbol)
+                     (T (format nil "~A" symbol))))
+       ;;(dims-str-list)
+       (n-dims)
+       )
+  (multiple-value-bind ( dims-str  dimslist)
+      (convert-string-w-separators-to-list symstr :separators separators)
+
+    ;;(setf dims-str-list (format nil "~{~a~^-~}" dimslist ))
+     (values dimslist dims-str)  
+     ;;end mvb,let, get-sym-dims
+     )))
+;;TEST
+;; (get-sym-dims 'a.b.c)
+;; works = (A B C)    ("A" "B" "C")
+
